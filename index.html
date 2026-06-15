@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Directorio Telefónico Interno</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <div class="container">
+        <div id="login-section" class="card">
+            <h2>Acceso al Directorio</h2>
+            <p>Ingresa tus credenciales para ver los números telefónicos.</p>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Usuario (Correo):</label>
+                    <input type="email" id="email" placeholder="ejemplo@lia.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Contraseña:</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" id="login-btn">Iniciar Sesión</button>
+            </form>
+            <p id="login-error" class="error-msg"></p>
+        </div>
+
+        <div id="directory-section" class="card hidden">
+            <div class="header-directory">
+                <h2>Directorio Telefónico</h2>
+                <button id="logout-btn">Cerrar Sesión</button>
+            </div>
+            
+            <input type="text" id="search-input" placeholder="Buscar por nombre, cargo o lugar...">
+
+            <div class="table-responsive">
+                <table id="directory-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Cargo</th>
+                            <th>Lugar</th>
+                            <th>Celular</th>
+                        </tr>
+                    </thead>
+                    <tbody id="directory-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
