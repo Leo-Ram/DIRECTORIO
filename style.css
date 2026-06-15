@@ -1,0 +1,470 @@
+/* =============================================
+   TOKENS
+   ============================================= */
+:root {
+    --blue-700: #1A56DB;
+    --blue-600: #1D4ED8;
+    --blue-100: #EFF6FF;
+    --blue-50:  #F0F7FF;
+    --green:    #16A34A;
+    --green-bg: #F0FDF4;
+    --red:      #DC2626;
+
+    --gray-900: #111827;
+    --gray-700: #374151;
+    --gray-500: #6B7280;
+    --gray-300: #D1D5DB;
+    --gray-100: #F3F4F6;
+    --gray-50:  #F9FAFB;
+    --white:    #FFFFFF;
+
+    --radius-card: 16px;
+    --radius-btn:  12px;
+    --shadow-card: 0 2px 12px rgba(0,0,0,0.08);
+    --shadow-btn:  0 2px 6px rgba(26,86,219,0.25);
+
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* =============================================
+   RESET & BASE
+   ============================================= */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+
+body {
+    font-family: var(--font);
+    background: var(--gray-100);
+    color: var(--gray-900);
+    min-height: 100dvh;
+}
+
+.hidden { display: none !important; }
+
+/* =============================================
+   LOGIN
+   ============================================= */
+#login-section {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    background: linear-gradient(145deg, #1e3a8a 0%, #1A56DB 60%, #3b82f6 100%);
+}
+
+.login-card {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 36px 28px 32px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+
+.login-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+}
+.login-logo span {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--blue-700);
+    letter-spacing: -0.3px;
+}
+
+.login-card h1 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--gray-900);
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+}
+
+.login-subtitle {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+    line-height: 1.5;
+    margin-bottom: 28px;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+.form-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 6px;
+    letter-spacing: 0.2px;
+}
+.form-group input {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1.5px solid var(--gray-300);
+    border-radius: 10px;
+    font-size: 1rem;
+    font-family: var(--font);
+    color: var(--gray-900);
+    background: var(--gray-50);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    -webkit-appearance: none;
+}
+.form-group input:focus {
+    border-color: var(--blue-700);
+    box-shadow: 0 0 0 3px rgba(26,86,219,0.12);
+    background: var(--white);
+}
+
+.error-msg {
+    font-size: 0.82rem;
+    color: var(--red);
+    min-height: 20px;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+#login-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--blue-700);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius-btn);
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    box-shadow: var(--shadow-btn);
+    transition: background 0.2s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+}
+#login-btn:active { transform: scale(0.98); background: var(--blue-600); }
+
+/* =============================================
+   DIRECTORIO — HEADER
+   ============================================= */
+#directory-section {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+}
+
+.dir-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--blue-700);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.dir-header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.dir-header-title h2 {
+    color: var(--white);
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.15);
+    color: var(--white);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.logout-btn:active { background: rgba(255,255,255,0.25); }
+
+/* =============================================
+   BUSCADOR
+   ============================================= */
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--white);
+    border-bottom: 1.5px solid var(--gray-200, #e5e7eb);
+    padding: 12px 16px;
+    position: sticky;
+    top: 57px;
+    z-index: 99;
+}
+.search-bar svg { color: var(--gray-500); flex-shrink: 0; }
+.search-bar input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 1rem;
+    font-family: var(--font);
+    color: var(--gray-900);
+    background: transparent;
+}
+.search-bar input::placeholder { color: var(--gray-500); }
+
+/* =============================================
+   CONTEO
+   ============================================= */
+.contacts-count {
+    padding: 10px 16px 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* =============================================
+   LISTA DE CONTACTOS — CARDS
+   ============================================= */
+.contact-list {
+    padding: 8px 12px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.contact-card {
+    background: var(--white);
+    border-radius: var(--radius-card);
+    padding: 16px;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.contact-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.contact-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--blue-100);
+    color: var(--blue-700);
+    font-size: 1rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    letter-spacing: -0.5px;
+}
+
+.contact-details { flex: 1; min-width: 0; }
+
+.contact-name {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.contact-cargo {
+    font-size: 0.8rem;
+    color: var(--blue-700);
+    font-weight: 600;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.contact-lugar {
+    font-size: 0.78rem;
+    color: var(--gray-500);
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.contact-number {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--gray-700);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--gray-50);
+    border-radius: 10px;
+    border: 1px solid var(--gray-100);
+}
+.contact-number svg { color: var(--gray-500); flex-shrink: 0; }
+
+/* =============================================
+   BOTONES DE ACCIÓN
+   ============================================= */
+.contact-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+}
+
+.btn-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 10px 6px;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.15s, transform 0.1s;
+    text-decoration: none;
+    line-height: 1;
+}
+.btn-action:active { transform: scale(0.95); opacity: 0.85; }
+
+.btn-call {
+    background: var(--green-bg);
+    color: var(--green);
+    border: 1.5px solid #bbf7d0;
+}
+.btn-whatsapp {
+    background: #f0fdf4;
+    color: #15803d;
+    border: 1.5px solid #bbf7d0;
+}
+.btn-copy {
+    background: var(--blue-50);
+    color: var(--blue-700);
+    border: 1.5px solid #bfdbfe;
+}
+
+/* =============================================
+   ESTADO VACÍO / CARGANDO
+   ============================================= */
+.empty-state {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--gray-500);
+}
+.empty-state svg {
+    margin-bottom: 12px;
+    opacity: 0.35;
+}
+.empty-state p {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.skeleton-card {
+    background: var(--white);
+    border-radius: var(--radius-card);
+    padding: 16px;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+.skeleton-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-50) 50%, var(--gray-100) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s infinite;
+    flex-shrink: 0;
+}
+.skeleton-lines { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+.skeleton-line {
+    height: 11px; border-radius: 6px;
+    background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-50) 50%, var(--gray-100) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s infinite;
+}
+.skeleton-line.short { width: 60%; }
+
+@keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* =============================================
+   TOAST
+   ============================================= */
+.toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--gray-900);
+    color: var(--white);
+    padding: 10px 22px;
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transition: opacity 0.3s, transform 0.3s;
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+}
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* =============================================
+   RESPONSIVE — PC
+   ============================================= */
+@media (min-width: 640px) {
+    .login-card { padding: 48px 40px 44px; }
+
+    .dir-header { padding: 16px 24px; }
+
+    .search-bar { padding: 14px 24px; top: 61px; }
+
+    .contacts-count { padding: 12px 24px 4px; }
+
+    .contact-list {
+        padding: 12px 24px 32px;
+        max-width: 680px;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .contact-card { padding: 20px; }
+}

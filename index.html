@@ -3,55 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Directorio Telefónico Interno</title>
+    <title>Directorio Telefónico</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-    <div class="container">
-        <div id="login-section" class="card">
-            <h2>Acceso al Directorio</h2>
-            <p>Ingresa tus credenciales para ver los números telefónicos.</p>
+    <!-- LOGIN -->
+    <div id="login-section">
+        <div class="login-card">
+            <div class="login-logo">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="40" height="40" rx="12" fill="#1A56DB"/>
+                    <path d="M12 14h16M12 20h10M12 26h13" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                    <circle cx="29" cy="26" r="5" fill="#60A5FA" stroke="white" stroke-width="2"/>
+                </svg>
+                <span>Directorio</span>
+            </div>
+            <h1>Bienvenido</h1>
+            <p class="login-subtitle">Ingresa tus credenciales para consultar el directorio interno.</p>
             <form id="login-form">
                 <div class="form-group">
-                    <label for="email">Usuario (Correo):</label>
-                    <input type="email" id="email" placeholder="ejemplo@lia.com" required>
+                    <label for="email">Correo electrónico</label>
+                    <input type="email" id="email" placeholder="usuario@empresa.com" required autocomplete="email">
                 </div>
                 <div class="form-group">
-                    <label for="password">Contraseña:</label>
-                    <input type="password" id="password" placeholder="••••••••" required>
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
                 </div>
-                <button type="submit" id="login-btn">Iniciar Sesión</button>
+                <p id="login-error" class="error-msg"></p>
+                <button type="submit" id="login-btn">
+                    <span id="btn-text">Iniciar sesión</span>
+                    <span id="btn-loader" class="hidden">...</span>
+                </button>
             </form>
-            <p id="login-error" class="error-msg"></p>
-        </div>
-
-        <div id="directory-section" class="card hidden">
-            <div class="header-directory">
-                <h2>Directorio Telefónico</h2>
-                <button id="logout-btn">Cerrar Sesión</button>
-            </div>
-            
-            <input type="text" id="search-input" placeholder="Buscar por nombre, cargo o lugar...">
-
-            <div class="table-responsive">
-                <table id="directory-table">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Apellido</th>
-                            <th>Cargo</th>
-                            <th>Lugar</th>
-                            <th>Celular</th>
-                        </tr>
-                    </thead>
-                    <tbody id="directory-body">
-                        </tbody>
-                </table>
-            </div>
         </div>
     </div>
+
+    <!-- DIRECTORIO -->
+    <div id="directory-section" class="hidden">
+        <header class="dir-header">
+            <div class="dir-header-title">
+                <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="40" height="40" rx="12" fill="#1A56DB"/>
+                    <path d="M12 14h16M12 20h10M12 26h13" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                    <circle cx="29" cy="26" r="5" fill="#60A5FA" stroke="white" stroke-width="2"/>
+                </svg>
+                <h2>Directorio</h2>
+            </div>
+            <button id="logout-btn" class="logout-btn" title="Cerrar sesión">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Salir
+            </button>
+        </header>
+
+        <div class="search-bar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="search-input" placeholder="Buscar por nombre, cargo o lugar…" autocomplete="off">
+        </div>
+
+        <div id="contacts-count" class="contacts-count"></div>
+
+        <div id="directory-body" class="contact-list">
+            <!-- Cards generadas por JS -->
+        </div>
+    </div>
+
+    <!-- TOAST de copia -->
+    <div id="toast" class="toast hidden">Número copiado</div>
 
     <script src="app.js"></script>
 </body>
