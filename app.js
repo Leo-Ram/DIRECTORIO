@@ -48,19 +48,47 @@ logoutBtn.addEventListener('click', async () => {
     verificarSesion();
 });
 
-// 5. VERIFICAR SESIÓN
+// 5. VERIFICAR SESIÓN 
 async function verificarSesion() {
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    try {
+        // Intentamos obtener el usuario actual de Supabase
+        const { data, error } = await supabaseClient.auth.getUser();
 
-    if (user) {
-        loginSection.classList.add('hidden');
-        directorySection.classList.remove('hidden');
-        if (listaContactos.length === 0) cargarContactos();
-    } else {
-        loginSection.classList.remove('hidden');
-        directorySection.classList.add('hidden');
-        directoryBody.innerHTML = "";
-        listaContactos = [];
+        // Si la API de Supabase responde con un error de sesión, lo lanzamos al catch
+        if (error) throw error;
+
+        const user = data?.user;
+
+        if (user) {
+            loginSection.classList.add('hidden');
+            directorySection.classList.remove('hidden');
+            if (listaContactos.length === 0) cargarContactos();
+        } else {
+            // No hay un usuario activo, mandamos al login de forma limpia
+            irAlLogin();
+        }
+
+    } catch (error) {
+        console.error("Error al verificar la sesión de Supabase:", error);
+        
+        // Si hay un error de red o de servidor, aseguramos que el usuario no quede 
+        // atrapado en un estado intermedio y lo enviamos al login de forma segura
+        irAlLogin();
+        
+        // Opcional: Puedes mostrar un mensaje sutil en la pantalla de login si deseas
+        if (loginError) {
+            loginError.textContent = "Hubo un problema de conexión. Por favor, intenta iniciar sesión nuevamente.";
+        }
+    }
+}
+
+// Función auxiliar para limpiar el estado visual del formulario de login
+function irAlLogin() {
+    loginSection.classList.remove('hidden');
+    directorySection.classList.add('hidden');
+    directoryBody.innerHTML = "";
+    listaContactos = [];
+    if (loginBtn) {
         loginBtn.textContent = "Iniciar sesión";
         loginBtn.disabled = false;
     }
