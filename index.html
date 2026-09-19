@@ -57,15 +57,101 @@
             </button>
         </header>
 
-        <div class="search-bar">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="search-input" placeholder="Buscar por nombre, cargo o lugar…" autocomplete="off">
+        <!-- SELECTOR DE VISTA -->
+        <nav class="view-tabs">
+            <button class="tab-btn active" data-view="directorio" id="tab-directorio">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Directorio
+            </button>
+            <button class="tab-btn" data-view="tareas" id="tab-tareas">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                Tareas
+            </button>
+        </nav>
+
+        <!-- VISTA: DIRECTORIO -->
+        <div id="view-directorio" class="app-view">
+            <div class="search-bar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="search-input" placeholder="Buscar por nombre, cargo o lugar…" autocomplete="off">
+            </div>
+
+            <div id="contacts-count" class="contacts-count"></div>
+
+            <div id="directory-body" class="contact-list">
+                <!-- Cards generadas por JS -->
+            </div>
         </div>
 
-        <div id="contacts-count" class="contacts-count"></div>
+        <!-- VISTA: TAREAS -->
+        <div id="view-tareas" class="app-view hidden">
+            <div class="tasks-toolbar">
+                <button id="new-task-btn" class="btn-new-task">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Nuevo pendiente
+                </button>
+            </div>
 
-        <div id="directory-body" class="contact-list">
-            <!-- Cards generadas por JS -->
+            <div class="search-bar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="task-search-input" placeholder="Buscar por título o responsable…" autocomplete="off">
+            </div>
+
+            <div class="tasks-subtabs">
+                <button class="subtab-btn active" data-subview="activos" id="subtab-activos">Activos</button>
+                <button class="subtab-btn" data-subview="historial" id="subtab-historial">Historial</button>
+            </div>
+
+            <div id="tasks-count" class="contacts-count"></div>
+
+            <div id="tasks-active-body" class="task-list">
+                <!-- Cards generadas por JS -->
+            </div>
+            <div id="tasks-history-body" class="task-list hidden">
+                <!-- Cards generadas por JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: NUEVO PENDIENTE -->
+    <div id="task-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Nuevo pendiente</h3>
+                <button type="button" id="close-task-modal" class="modal-close" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="task-form">
+                <div class="form-group">
+                    <label for="task-title">Título</label>
+                    <input type="text" id="task-title" placeholder="Ej. Informe de gestión anual" required>
+                </div>
+                <div class="form-group">
+                    <label for="task-desc">Descripción</label>
+                    <textarea id="task-desc" rows="3" placeholder="Detalles o notas adicionales (opcional)"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="task-due">Fecha límite</label>
+                        <input type="datetime-local" id="task-due">
+                    </div>
+                    <div class="form-group">
+                        <label for="task-priority">Prioridad</label>
+                        <select id="task-priority">
+                            <option value="alta">Alta</option>
+                            <option value="media" selected>Media</option>
+                            <option value="baja">Baja</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Responsables</label>
+                    <div id="assignee-list" class="assignee-list">
+                        <!-- Checkboxes generados por JS a partir de "profiles" -->
+                    </div>
+                </div>
+                <p id="task-error" class="error-msg"></p>
+                <button type="submit" id="save-task-btn">Guardar pendiente</button>
+            </form>
         </div>
     </div>
 

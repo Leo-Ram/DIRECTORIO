@@ -18,7 +18,35 @@ const searchInput       = document.getElementById('search-input');
 const contactsCount     = document.getElementById('contacts-count');
 const toast             = document.getElementById('toast');
 
+// Referencias — TAREAS
+const tabDirectorio     = document.getElementById('tab-directorio');
+const tabTareas         = document.getElementById('tab-tareas');
+const viewDirectorio    = document.getElementById('view-directorio');
+const viewTareas        = document.getElementById('view-tareas');
+const subtabActivos     = document.getElementById('subtab-activos');
+const subtabHistorial   = document.getElementById('subtab-historial');
+const tasksActiveBody   = document.getElementById('tasks-active-body');
+const tasksHistoryBody  = document.getElementById('tasks-history-body');
+const tasksCount        = document.getElementById('tasks-count');
+const taskSearchInput   = document.getElementById('task-search-input');
+const newTaskBtn        = document.getElementById('new-task-btn');
+const taskModal         = document.getElementById('task-modal');
+const closeTaskModalBtn = document.getElementById('close-task-modal');
+const taskForm          = document.getElementById('task-form');
+const taskTitleInput    = document.getElementById('task-title');
+const taskDescInput     = document.getElementById('task-desc');
+const taskDueInput      = document.getElementById('task-due');
+const taskPriorityInput = document.getElementById('task-priority');
+const assigneeListEl    = document.getElementById('assignee-list');
+const taskError         = document.getElementById('task-error');
+const saveTaskBtn       = document.getElementById('save-task-btn');
+
 let listaContactos = [];
+let listaTareas    = [];
+let listaPerfiles  = [];   // usuarios con acceso a la app (tabla profiles)
+let usuarioActual  = null; // { id, full_name, email }
+let subvistaTareas = 'activos';
+let tareasChannel   = null;
 
 // 3. LOGIN
 loginForm.addEventListener('submit', async (e) => {
@@ -63,6 +91,11 @@ async function verificarSesion() {
             loginSection.classList.add('hidden');
             directorySection.classList.remove('hidden');
             if (listaContactos.length === 0) cargarContactos();
+
+            usuarioActual = { id: user.id, email: user.email };
+            await cargarPerfiles();
+            await cargarTareas();
+            suscribirRealtimeTareas();
         } else {
             // No hay un usuario activo, mandamos al login de forma limpia
             irAlLogin();
@@ -91,6 +124,19 @@ function irAlLogin() {
     if (loginBtn) {
         loginBtn.textContent = "Iniciar sesión";
         loginBtn.disabled = false;
+    }
+
+    // Reset del módulo de tareas
+    listaTareas = [];
+    listaPerfiles = [];
+    usuarioActual = null;
+    tasksActiveBody.innerHTML = "";
+    tasksHistoryBody.innerHTML = "";
+    taskModal.classList.add('hidden');
+    cambiarVista('directorio');
+    if (tareasChannel) {
+        supabaseClient.removeChannel(tareasChannel);
+        tareasChannel = null;
     }
 }
 
@@ -245,6 +291,309 @@ function mostrarToast(msg) {
         toast.classList.remove('show');
         setTimeout(() => toast.classList.add('hidden'), 300);
     }, 2200);
+}
+
+// =============================================
+// 10. MÓDULO DE TAREAS Y PENDIENTES
+// =============================================
+
+// --- 10.1 Navegación entre vistas (Directorio / Tareas) ---
+function cambiarVista(vista) {
+    const esDirectorio = vista === 'directorio';
+    viewDirectorio.classList.toggle('hidden', !esDirectorio);
+    viewTareas.classList.toggle('hidden', esDirectorio);
+    tabDirectorio.classList.toggle('active', esDirectorio);
+    tabTareas.classList.toggle('active', !esDirectorio);
+}
+tabDirectorio.addEventListener('click', () => cambiarVista('directorio'));
+tabTareas.addEventListener('click', () => cambiarVista('tareas'));
+
+function cambiarSubvistaTareas(subvista) {
+    subvistaTareas = subvista;
+    const esActivos = subvista === 'activos';
+    tasksActiveBody.classList.toggle('hidden', !esActivos);
+    tasksHistoryBody.classList.toggle('hidden', esActivos);
+    subtabActivos.classList.toggle('active', esActivos);
+    subtabHistorial.classList.toggle('active', !esActivos);
+    aplicarFiltroTareas();
+}
+subtabActivos.addEventListener('click', () => cambiarSubvistaTareas('activos'));
+subtabHistorial.addEventListener('click', () => cambiarSubvistaTareas('historial'));
+
+// --- 10.2 Cargar perfiles (solo usuarios con acceso a la app) ---
+async function cargarPerfiles() {
+    const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('id, full_name')
+        .order('full_name', { ascending: true });
+
+    if (error) {
+        console.error('Error al cargar perfiles:', error);
+        listaPerfiles = [];
+        return;
+    }
+    listaPerfiles = data || [];
+    dibujarCheckboxesResponsables();
+}
+
+function dibujarCheckboxesResponsables() {
+    if (listaPerfiles.length === 0) {
+        assigneeListEl.innerHTML = `<p style="font-size:0.82rem;color:var(--gray-500);padding:4px;">No hay usuarios disponibles para asignar.</p>`;
+        return;
+    }
+    assigneeListEl.innerHTML = listaPerfiles.map(p => `
+        <label class="assignee-item">
+            <input type="checkbox" value="${p.id}" class="assignee-checkbox">
+            ${p.full_name}
+        </label>
+    `).join('');
+}
+
+// --- 10.3 Cargar tareas activas + historial ---
+async function cargarTareas() {
+    const { data, error } = await supabaseClient
+        .from('tasks')
+        .select(`
+            id, title, description, status, priority_manual, due_date,
+            created_at, completed_at,
+            creador:profiles!tasks_created_by_fkey(full_name),
+            completador:profiles!tasks_completed_by_fkey(full_name),
+            task_assignees(profiles(id, full_name))
+        `)
+        .order('due_date', { ascending: true });
+
+    if (error) {
+        console.error('Error al cargar tareas:', error);
+        tasksActiveBody.innerHTML = `
+            <div class="empty-state">
+                <p>Error al cargar los pendientes.<br>Intenta recargar la página.</p>
+            </div>`;
+        return;
+    }
+
+    listaTareas = data || [];
+    aplicarFiltroTareas();
+}
+
+// --- 10.4 Urgencia según due_date ---
+function calcularUrgencia(dueDateStr) {
+    if (!dueDateStr) return 'plazo';
+    const ahora = new Date();
+    const vence = new Date(dueDateStr);
+    const diffHoras = (vence - ahora) / (1000 * 60 * 60);
+
+    if (diffHoras < 0) return 'vencido';
+    if (diffHoras <= 24) return 'hoy';
+    if (diffHoras <= 24 * 7) return 'proximo';
+    return 'plazo';
+}
+
+const ETIQUETA_URGENCIA = {
+    vencido: 'Vencido',
+    hoy: 'Urgente / Hoy',
+    proximo: 'Próximo',
+    plazo: 'En plazo'
+};
+
+function formatearFecha(fechaStr) {
+    if (!fechaStr) return 'Sin fecha límite';
+    const f = new Date(fechaStr);
+    return f.toLocaleString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+// --- 10.5 Filtro / búsqueda + separación activos vs historial ---
+function aplicarFiltroTareas() {
+    const q = taskSearchInput.value.toLowerCase().trim();
+
+    const coincide = (t) => {
+        const responsables = (t.task_assignees || []).map(a => a.profiles?.full_name || '').join(' ');
+        return (t.title || '').toLowerCase().includes(q) ||
+               responsables.toLowerCase().includes(q) ||
+               (t.creador?.full_name || '').toLowerCase().includes(q);
+    };
+
+    const activas    = listaTareas.filter(t => t.status !== 'completado' && coincide(t));
+    const completadas = listaTareas.filter(t => t.status === 'completado' && coincide(t));
+
+    if (subvistaTareas === 'activos') {
+        dibujarTareas(activas, tasksActiveBody, false);
+        tasksCount.textContent = `${activas.length} pendiente${activas.length === 1 ? '' : 's'} activo${activas.length === 1 ? '' : 's'}`;
+    } else {
+        // Historial ordenado por fecha de completado, más reciente primero
+        completadas.sort((a, b) => new Date(b.completed_at || 0) - new Date(a.completed_at || 0));
+        dibujarTareas(completadas, tasksHistoryBody, true);
+        tasksCount.textContent = `${completadas.length} completado${completadas.length === 1 ? '' : 's'}`;
+    }
+}
+taskSearchInput.addEventListener('input', aplicarFiltroTareas);
+
+// --- 10.6 Render de tarjetas de tareas ---
+function dibujarTareas(tareas, contenedor, esHistorial) {
+    contenedor.innerHTML = "";
+
+    if (tareas.length === 0) {
+        contenedor.innerHTML = `
+            <div class="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                <p>${esHistorial ? 'Aún no hay pendientes completados.' : 'No hay pendientes activos.'}</p>
+            </div>`;
+        return;
+    }
+
+    tareas.forEach(t => {
+        const urgencia = esHistorial ? null : calcularUrgencia(t.due_date);
+        const responsables = (t.task_assignees || []).map(a => a.profiles?.full_name).filter(Boolean).join(', ') || 'Sin asignar';
+        const creador = t.creador?.full_name || 'Desconocido';
+
+        const card = document.createElement('div');
+        card.className = 'task-card' + (esHistorial ? ' is-completed' : ` urgency-${urgencia}`);
+        card.innerHTML = `
+            <div class="task-top-row">
+                <div class="task-title">${t.title}</div>
+                ${esHistorial
+                    ? `<span class="task-badge status-completado">Completado</span>`
+                    : `<span class="task-badge urgency-${urgencia}">${ETIQUETA_URGENCIA[urgencia]}</span>`}
+            </div>
+            <span class="task-priority-tag priority-${t.priority_manual || 'media'}">Prioridad ${t.priority_manual || 'media'}</span>
+            ${t.description ? `<div class="task-desc">${t.description}</div>` : ''}
+            <div class="task-meta">
+                <span><strong>Resp:</strong> ${responsables}</span>
+                <span><strong>Creado por:</strong> ${creador}</span>
+            </div>
+            <div class="task-meta">
+                <span><strong>${esHistorial ? 'Completado' : 'Vence'}:</strong> ${esHistorial ? formatearFecha(t.completed_at) : formatearFecha(t.due_date)}</span>
+                ${esHistorial && t.completador?.full_name ? `<span><strong>Por:</strong> ${t.completador.full_name}</span>` : ''}
+            </div>
+            ${!esHistorial ? `<button class="btn-complete-task" data-task-id="${t.id}">Marcar como completado</button>` : ''}
+        `;
+
+        if (!esHistorial) {
+            card.querySelector('.btn-complete-task').addEventListener('click', (e) => marcarCompletado(t.id, e.target));
+        }
+
+        contenedor.appendChild(card);
+    });
+}
+
+// --- 10.7 Marcar tarea como completada ---
+async function marcarCompletado(taskId, btnEl) {
+    if (!usuarioActual) return;
+    btnEl.disabled = true;
+    btnEl.textContent = 'Guardando…';
+
+    const { error } = await supabaseClient
+        .from('tasks')
+        .update({
+            status: 'completado',
+            completed_by: usuarioActual.id,
+            completed_at: new Date().toISOString()
+        })
+        .eq('id', taskId);
+
+    if (error) {
+        console.error('Error al completar la tarea:', error);
+        btnEl.disabled = false;
+        btnEl.textContent = 'Marcar como completado';
+        mostrarToast('No se pudo completar. Intenta de nuevo.');
+        return;
+    }
+
+    mostrarToast('Pendiente completado ✓');
+    await cargarTareas();
+}
+
+// --- 10.8 Modal: abrir / cerrar ---
+function abrirModalTarea() {
+    taskForm.reset();
+    taskError.textContent = "";
+    dibujarCheckboxesResponsables();
+    taskModal.classList.remove('hidden');
+}
+function cerrarModalTarea() {
+    taskModal.classList.add('hidden');
+}
+newTaskBtn.addEventListener('click', abrirModalTarea);
+closeTaskModalBtn.addEventListener('click', cerrarModalTarea);
+taskModal.addEventListener('click', (e) => {
+    if (e.target === taskModal) cerrarModalTarea();
+});
+
+// --- 10.9 Guardar nuevo pendiente ---
+taskForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    taskError.textContent = "";
+
+    const titulo = taskTitleInput.value.trim();
+    const descripcion = taskDescInput.value.trim();
+    const fechaLimite = taskDueInput.value ? new Date(taskDueInput.value).toISOString() : null;
+    const prioridad = taskPriorityInput.value;
+    const responsablesSeleccionados = Array.from(
+        assigneeListEl.querySelectorAll('.assignee-checkbox:checked')
+    ).map(cb => cb.value);
+
+    if (!titulo) {
+        taskError.textContent = "El título es obligatorio.";
+        return;
+    }
+    if (!usuarioActual) {
+        taskError.textContent = "No se pudo identificar tu sesión. Vuelve a iniciar sesión.";
+        return;
+    }
+
+    saveTaskBtn.disabled = true;
+    saveTaskBtn.textContent = "Guardando…";
+
+    const { data: nuevaTarea, error: errorTarea } = await supabaseClient
+        .from('tasks')
+        .insert({
+            title: titulo,
+            description: descripcion || null,
+            due_date: fechaLimite,
+            priority_manual: prioridad,
+            created_by: usuarioActual.id,
+            status: 'pendiente'
+        })
+        .select('id')
+        .single();
+
+    if (errorTarea) {
+        console.error('Error al crear la tarea:', errorTarea);
+        taskError.textContent = "No se pudo crear el pendiente. Intenta de nuevo.";
+        saveTaskBtn.disabled = false;
+        saveTaskBtn.textContent = "Guardar pendiente";
+        return;
+    }
+
+    if (responsablesSeleccionados.length > 0) {
+        const filas = responsablesSeleccionados.map(userId => ({
+            task_id: nuevaTarea.id,
+            user_id: userId
+        }));
+        const { error: errorAsignados } = await supabaseClient
+            .from('task_assignees')
+            .insert(filas);
+
+        if (errorAsignados) {
+            console.error('Error al asignar responsables:', errorAsignados);
+            mostrarToast('Pendiente creado, pero falló asignar responsables.');
+        }
+    }
+
+    saveTaskBtn.disabled = false;
+    saveTaskBtn.textContent = "Guardar pendiente";
+    cerrarModalTarea();
+    mostrarToast('Pendiente creado ✓');
+    await cargarTareas();
+});
+
+// --- 10.10 Sincronización en tiempo real ---
+function suscribirRealtimeTareas() {
+    if (tareasChannel) return; // ya suscrito
+    tareasChannel = supabaseClient
+        .channel('tasks-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => cargarTareas())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'task_assignees' }, () => cargarTareas())
+        .subscribe();
 }
 
 // Iniciar
