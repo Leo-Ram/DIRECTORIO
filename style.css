@@ -761,7 +761,16 @@ body {
     cursor: pointer;
 }
 .assignee-item:hover { background: var(--gray-100); }
-.assignee-item input { width: 17px; height: 17px; accent-color: var(--blue-700); flex-shrink: 0; }
+.assignee-item input[type="checkbox"] {
+    -webkit-appearance: checkbox;
+    appearance: checkbox;
+    width: 17px;
+    height: 17px;
+    accent-color: var(--blue-700);
+    flex-shrink: 0;
+    background: none;
+    border: none;
+}
 
 #save-task-btn {
     width: 100%;
