@@ -797,3 +797,27 @@ body {
     .modal-overlay { align-items: center; }
     .modal-card { border-radius: 20px; }
 }
+
+
+/* =============================================
+   ADMIN: eliminar contacto
+   ============================================= */
+.admin-actions {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--gray-100);
+}
+.btn-delete-contact {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--red);
+    background: var(--white);
+    color: var(--red);
+    font-family: var(--font);
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: var(--radius-btn);
+    cursor: pointer;
+}
+.btn-delete-contact:active { background: #FEF2F2; }
+.btn-delete-contact:disabled { opacity: 0.6; cursor: default; }

@@ -4,6 +4,10 @@ const SUPABASE_ANON_KEY = "sb_publishable_oh9iqc2Wxc0lAOK7_D5_Lg_U_WV8p5-";
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Correo del administrador. OJO: esto solo controla qué botones se muestran.
+// La seguridad real está en las políticas RLS de Supabase (ver supabase_admin.sql).
+const ADMIN_EMAIL = "admin@lia.com";
+
 // 2. REFERENCIAS
 const loginSection      = document.getElementById('login-section');
 const directorySection  = document.getElementById('directory-section');
@@ -41,6 +45,16 @@ const assigneeListEl    = document.getElementById('assignee-list');
 const taskError         = document.getElementById('task-error');
 const saveTaskBtn       = document.getElementById('save-task-btn');
 
+// Referencias — ADMIN (agregar / eliminar contactos)
+const adminToolbar       = document.getElementById('admin-toolbar');
+const newContactBtn      = document.getElementById('new-contact-btn');
+const contactModal       = document.getElementById('contact-modal');
+const closeContactModal  = document.getElementById('close-contact-modal');
+const contactForm        = document.getElementById('contact-form');
+const contactError       = document.getElementById('contact-error');
+const saveContactBtn     = document.getElementById('save-contact-btn');
+
+let esAdmin        = false;
 let listaContactos = [];
 let listaTareas    = [];
 let listaPerfiles  = [];   // usuarios con acceso a la app (tabla profiles)
@@ -88,11 +102,13 @@ async function verificarSesion() {
         const user = data?.user;
 
         if (user) {
+            usuarioActual = { id: user.id, email: user.email };
+            esAdmin = (user.email || '').toLowerCase() === ADMIN_EMAIL;
+            adminToolbar.classList.toggle('hidden', !esAdmin);
+
             loginSection.classList.add('hidden');
             directorySection.classList.remove('hidden');
             if (listaContactos.length === 0) cargarContactos();
-
-            usuarioActual = { id: user.id, email: user.email };
             await cargarPerfiles();
             await cargarTareas();
             suscribirRealtimeTareas();
@@ -125,6 +141,11 @@ function irAlLogin() {
         loginBtn.textContent = "Iniciar sesión";
         loginBtn.disabled = false;
     }
+
+    // Reset admin
+    esAdmin = false;
+    adminToolbar.classList.add('hidden');
+    contactModal.classList.add('hidden');
 
     // Reset del módulo de tareas
     listaTareas = [];
@@ -177,11 +198,11 @@ function dibujarCards(contactos) {
     }
 
     contactos.forEach(c => {
-        const nombre    = c["NOMBRES"]        || '';
-        const apellido  = c["APELLIDOS"]      || '';
-        const cargo     = c["CARGO"]          || '';
-        const lugar     = c["LUGAR DE TRABAJO"] || '';
-        const celular   = c["CELULAR"]        || '';
+        const nombre    = esc(c["NOMBRES"]        || '');
+        const apellido  = esc(c["APELLIDOS"]      || '');
+        const cargo     = esc(c["CARGO"]          || '');
+        const lugar     = esc(c["LUGAR DE TRABAJO"] || '');
+        const celular   = esc(c["CELULAR"]        || '');
 
         const nombreCompleto = `${nombre} ${apellido}`.trim();
         const iniciales = obtenerIniciales(nombre, apellido);
@@ -221,7 +242,17 @@ function dibujarCards(contactos) {
                     Copiar
                 </button>
             </div>` : ''}
+
+            ${esAdmin ? `<div class="admin-actions">
+                <button type="button" class="btn-delete-contact" data-id="${c.id}">Eliminar contacto</button>
+            </div>` : ''}
         `;
+
+        if (esAdmin) {
+            card.querySelector('.btn-delete-contact').addEventListener('click', (e) => {
+                eliminarContacto(c.id, `${nombre} ${apellido}`.trim(), e.currentTarget);
+            });
+        }
         directoryBody.appendChild(card);
     });
 }
@@ -291,6 +322,107 @@ function mostrarToast(msg) {
         toast.classList.remove('show');
         setTimeout(() => toast.classList.add('hidden'), 300);
     }, 2200);
+}
+
+// Escapa texto antes de meterlo en innerHTML (evita inyección de HTML/JS)
+function esc(valor) {
+    return String(valor ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// =============================================
+// ADMIN: AGREGAR / ELIMINAR CONTACTOS
+// =============================================
+function abrirModalContacto() {
+    if (!esAdmin) return;
+    contactForm.reset();
+    contactError.textContent = "";
+    contactModal.classList.remove('hidden');
+}
+function cerrarModalContacto() {
+    contactModal.classList.add('hidden');
+}
+newContactBtn.addEventListener('click', abrirModalContacto);
+closeContactModal.addEventListener('click', cerrarModalContacto);
+contactModal.addEventListener('click', (e) => {
+    if (e.target === contactModal) cerrarModalContacto();
+});
+
+contactForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!esAdmin) return;
+    contactError.textContent = "";
+
+    const nombres   = document.getElementById('contact-nombres').value.trim();
+    const apellidos = document.getElementById('contact-apellidos').value.trim();
+    const cargo     = document.getElementById('contact-cargo').value.trim();
+    const lugar     = document.getElementById('contact-lugar').value.trim();
+    const celular   = document.getElementById('contact-celular').value.replace(/\D/g, '');
+
+    if (!nombres) {
+        contactError.textContent = "El nombre es obligatorio.";
+        return;
+    }
+    if (celular.length < 7) {
+        contactError.textContent = "Ingresa un número válido (solo dígitos).";
+        return;
+    }
+
+    saveContactBtn.disabled = true;
+    saveContactBtn.textContent = "Guardando…";
+
+    const { error } = await supabaseClient.from('dir1').insert({
+        "NOMBRES": nombres,
+        "APELLIDOS": apellidos || null,
+        "CARGO": cargo || null,
+        "LUGAR DE TRABAJO": lugar || null,
+        "CELULAR": celular
+    });
+
+    saveContactBtn.disabled = false;
+    saveContactBtn.textContent = "Guardar contacto";
+
+    if (error) {
+        console.error('Error al agregar contacto:', error);
+        contactError.textContent = "No se pudo guardar. Verifica tus permisos e inténtalo de nuevo.";
+        return;
+    }
+
+    cerrarModalContacto();
+    mostrarToast('Contacto agregado ✓');
+    await cargarContactos();
+    searchInput.value = "";
+});
+
+async function eliminarContacto(id, nombre, btnEl) {
+    if (!esAdmin) return;
+    if (!confirm(`¿Eliminar a "${nombre || 'este contacto'}" del directorio? Esta acción no se puede deshacer.`)) return;
+
+    btnEl.disabled = true;
+    btnEl.textContent = 'Eliminando…';
+
+    // .select() devuelve las filas borradas: si RLS bloquea, vendrá vacío aunque no haya "error"
+    const { data, error } = await supabaseClient
+        .from('dir1')
+        .delete()
+        .eq('id', id)
+        .select();
+
+    if (error || !data || data.length === 0) {
+        console.error('Error al eliminar contacto:', error);
+        btnEl.disabled = false;
+        btnEl.textContent = 'Eliminar contacto';
+        mostrarToast('No se pudo eliminar el contacto.');
+        return;
+    }
+
+    mostrarToast('Contacto eliminado ✓');
+    await cargarContactos();
+    searchInput.dispatchEvent(new Event('input'));
 }
 
 // =============================================

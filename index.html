@@ -71,6 +71,14 @@
 
         <!-- VISTA: DIRECTORIO -->
         <div id="view-directorio" class="app-view">
+            <!-- Solo visible para el administrador -->
+            <div id="admin-toolbar" class="tasks-toolbar hidden">
+                <button id="new-contact-btn" class="btn-new-task" type="button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Agregar contacto
+                </button>
+            </div>
+
             <div class="search-bar">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input type="text" id="search-input" placeholder="Buscar por nombre, cargo o lugar…" autocomplete="off">
@@ -151,6 +159,42 @@
                 </div>
                 <p id="task-error" class="error-msg"></p>
                 <button type="submit" id="save-task-btn">Guardar pendiente</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: NUEVO CONTACTO (solo admin) -->
+    <div id="contact-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Agregar contacto</h3>
+                <button type="button" id="close-contact-modal" class="modal-close" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="contact-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contact-nombres">Nombres</label>
+                        <input type="text" id="contact-nombres" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-apellidos">Apellidos</label>
+                        <input type="text" id="contact-apellidos">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="contact-cargo">Cargo</label>
+                    <input type="text" id="contact-cargo">
+                </div>
+                <div class="form-group">
+                    <label for="contact-lugar">Lugar de trabajo</label>
+                    <input type="text" id="contact-lugar">
+                </div>
+                <div class="form-group">
+                    <label for="contact-celular">Celular</label>
+                    <input type="tel" id="contact-celular" inputmode="numeric" placeholder="3001234567" required>
+                </div>
+                <p id="contact-error" class="error-msg"></p>
+                <button type="submit" id="save-contact-btn">Guardar contacto</button>
             </form>
         </div>
     </div>
