@@ -244,13 +244,13 @@ function dibujarCards(contactos) {
             </div>` : ''}
 
             ${esAdmin ? `<div class="admin-actions">
-                <button type="button" class="btn-delete-contact" data-id="${c.id}">Eliminar contacto</button>
+                <button type="button" class="btn-delete-contact">Eliminar contacto</button>
             </div>` : ''}
         `;
 
         if (esAdmin) {
             card.querySelector('.btn-delete-contact').addEventListener('click', (e) => {
-                eliminarContacto(c.id, `${nombre} ${apellido}`.trim(), e.currentTarget);
+                eliminarContacto(c["NOMBRES"], c["APELLIDOS"], e.currentTarget);
             });
         }
         directoryBody.appendChild(card);
@@ -363,8 +363,8 @@ contactForm.addEventListener('submit', async (e) => {
     const lugar     = document.getElementById('contact-lugar').value.trim();
     const celular   = document.getElementById('contact-celular').value.replace(/\D/g, '');
 
-    if (!nombres) {
-        contactError.textContent = "El nombre es obligatorio.";
+    if (!nombres || !apellidos || !cargo) {
+        contactError.textContent = "Nombres, apellidos y cargo son obligatorios.";
         return;
     }
     if (celular.length < 7) {
@@ -377,8 +377,8 @@ contactForm.addEventListener('submit', async (e) => {
 
     const { error } = await supabaseClient.from('dir1').insert({
         "NOMBRES": nombres,
-        "APELLIDOS": apellidos || null,
-        "CARGO": cargo || null,
+        "APELLIDOS": apellidos,
+        "CARGO": cargo,
         "LUGAR DE TRABAJO": lugar || null,
         "CELULAR": celular
     });
@@ -388,7 +388,9 @@ contactForm.addEventListener('submit', async (e) => {
 
     if (error) {
         console.error('Error al agregar contacto:', error);
-        contactError.textContent = "No se pudo guardar. Verifica tus permisos e inténtalo de nuevo.";
+        contactError.textContent = error.code === '23505'
+            ? "Ya existe un contacto con esos nombres y apellidos."
+            : "No se pudo guardar. Verifica tus permisos e inténtalo de nuevo.";
         return;
     }
 
@@ -398,22 +400,25 @@ contactForm.addEventListener('submit', async (e) => {
     searchInput.value = "";
 });
 
-async function eliminarContacto(id, nombre, btnEl) {
+async function eliminarContacto(nombres, apellidos, btnEl) {
     if (!esAdmin) return;
-    if (!confirm(`¿Eliminar a "${nombre || 'este contacto'}" del directorio? Esta acción no se puede deshacer.`)) return;
+    const etiqueta = `${nombres} ${apellidos}`.trim();
+    if (!confirm(`¿Eliminar a "${etiqueta}" del directorio? Esta acción no se puede deshacer.`)) return;
 
     btnEl.disabled = true;
     btnEl.textContent = 'Eliminando…';
 
+    // La clave primaria de dir1 es (NOMBRES, APELLIDOS).
     // .select() devuelve las filas borradas: si RLS bloquea, vendrá vacío aunque no haya "error"
     const { data, error } = await supabaseClient
         .from('dir1')
         .delete()
-        .eq('id', id)
+        .eq('NOMBRES', nombres)
+        .eq('APELLIDOS', apellidos)
         .select();
 
     if (error || !data || data.length === 0) {
-        console.error('Error al eliminar contacto:', error);
+        console.error('Error al eliminar contacto:', error, data);
         btnEl.disabled = false;
         btnEl.textContent = 'Eliminar contacto';
         mostrarToast('No se pudo eliminar el contacto.');
